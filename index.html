@@ -452,11 +452,24 @@ body {
 
   <!-- 홈: 목장 선택 -->
   <div class="screen active" id="screen-farm">
-    <div class="section-label">목장 목록</div>
+    <div style="position:relative; margin-bottom:14px;">
+      <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:16px; color:#aaa;">🔍</span>
+      <input type="text" id="farm-search" placeholder="목장 검색..." oninput="filterFarms()"
+        style="width:100%; padding:11px 12px 11px 36px; border:0.5px solid #e0e0e0; border-radius:12px; font-size:15px; background:#fff; outline:none;" />
+    </div>
+    <div id="recent-section">
+      <div class="section-label">최근 방문</div>
+      <div class="btn-grid" id="recent-grid"></div>
+    </div>
+    <div class="section-label" id="all-farms-label">전체 목장 (가나다순)</div>
     <div class="btn-grid" id="farm-grid"></div>
     <div id="farm-empty" class="empty-state" style="display:none;">
       <div class="icon">🏠</div>
       <p>등록된 목장이 없습니다<br>설정에서 목장을 추가해주세요</p>
+    </div>
+    <div id="search-empty" class="empty-state" style="display:none;">
+      <div class="icon">🔍</div>
+      <p>검색 결과가 없습니다</p>
     </div>
   </div>
 
@@ -659,18 +672,78 @@ async function loadStock() {
 function renderFarmGrid() {
   const grid = document.getElementById('farm-grid');
   const empty = document.getElementById('farm-empty');
+  const searchEmpty = document.getElementById('search-empty');
+  const recentSection = document.getElementById('recent-section');
+  const allLabel = document.getElementById('all-farms-label');
+
   if (farms.length === 0) {
     grid.innerHTML = '';
     empty.style.display = 'block';
+    recentSection.style.display = 'none';
     return;
   }
   empty.style.display = 'none';
-  grid.innerHTML = farms.map(f => `
+  searchEmpty.style.display = 'none';
+
+  // 가나다순 정렬
+  const sorted = [...farms].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+  // 최근 방문 (로컬 저장)
+  const recentNames = JSON.parse(localStorage.getItem('recentFarms') || '[]');
+  const recentFarms = recentNames.map(n => farms.find(f => f.name === n)).filter(Boolean);
+
+  if (recentFarms.length > 0) {
+    recentSection.style.display = 'block';
+    document.getElementById('recent-grid').innerHTML = recentFarms.slice(0, 4).map(f => `
+      <button class="btn-card" onclick="selectFarm('${f.name}')" style="border-color:#d0e8ff; background:#f5faff;">
+        <div class="name">🕐 ${f.name}</div>
+        <div class="sub">${f.owner || ''}</div>
+      </button>
+    `).join('');
+  } else {
+    recentSection.style.display = 'none';
+  }
+
+  allLabel.textContent = `전체 목장 (${sorted.length}개, 가나다순)`;
+  grid.innerHTML = sorted.map(f => `
     <button class="btn-card" onclick="selectFarm('${f.name}')">
       <div class="name">🏠 ${f.name}</div>
       <div class="sub">${f.owner || ''}${f.phone ? ' · ' + f.phone : ''}</div>
     </button>
   `).join('');
+}
+
+function filterFarms() {
+  const q = document.getElementById('farm-search').value.trim();
+  const grid = document.getElementById('farm-grid');
+  const searchEmpty = document.getElementById('search-empty');
+  const recentSection = document.getElementById('recent-section');
+  const allLabel = document.getElementById('all-farms-label');
+
+  if (!q) {
+    renderFarmGrid();
+    return;
+  }
+
+  recentSection.style.display = 'none';
+  const filtered = farms.filter(f =>
+    f.name.includes(q) || (f.owner && f.owner.includes(q)) || (f.phone && f.phone.includes(q))
+  ).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    searchEmpty.style.display = 'block';
+    allLabel.textContent = '검색 결과';
+  } else {
+    searchEmpty.style.display = 'none';
+    allLabel.textContent = `검색 결과 (${filtered.length}개)`;
+    grid.innerHTML = filtered.map(f => `
+      <button class="btn-card" onclick="selectFarm('${f.name}')">
+        <div class="name">🏠 ${f.name}</div>
+        <div class="sub">${f.owner || ''}${f.phone ? ' · ' + f.phone : ''}</div>
+      </button>
+    `).join('');
+  }
 }
 
 function renderItemGrids() {
@@ -747,6 +820,11 @@ function renderRecordSection() {
 
 function selectFarm(name) {
   selectedFarm = name;
+  let recent = JSON.parse(localStorage.getItem('recentFarms') || '[]');
+  recent = [name, ...recent.filter(n => n !== name)].slice(0, 4);
+  localStorage.setItem('recentFarms', JSON.stringify(recent));
+  const searchEl = document.getElementById('farm-search');
+  if (searchEl) searchEl.value = '';
   renderFarmBar('farm-bar-item');
   showScreen('item');
   setTopbar(name, '시술 또는 약물을 선택하세요');

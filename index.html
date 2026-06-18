@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="목장청구">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>목장 청구 관리</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+.topbar {
+  background: #fff;
+  border-bottom: 0.5px solid #e0e0e0;
+  padding: 14px 16px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.topbar-title { font-size: 17px; font-weight: 600; }
+.topbar-sub { font-size: 13px; color: #888; margin-top: 1px; }
+
+.screen { display: none; padding: 16px; }
+.screen.active { display: block; }
+
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 20px 0 8px;
+}
+.section-label:first-child { margin-top: 0; }
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.btn-card {
+  background: #fff;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+.btn-card:active { background: #f0f0f0; }
+.btn-card .name { font-size: 15px; font-weight: 500; }
+.btn-card .sub { font-size: 12px; color: #888; margin-top: 3px; }
+
+.btn-primary {
+  background: #1d1d1f;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 12px;
+}
+.btn-primary:active { opacity: 0.8; }
+
+.btn-secondary {
+  background: #fff;
+  color: #1d1d1f;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.btn-secondary:active { background: #f0f0f0; }
+
+.btn-danger {
+  background: #fff0f0;
+  color: #d00;
+  border: 0.5px solid #fcc;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.farm-bar {
+  background: #fff;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.farm-bar .farm-name { font-size: 16px; font-weight: 600; }
+.farm-bar .change-btn {
+  font-size: 13px;
+  color: #0071e3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.qty-box {
+  background: #fff;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.qty-item-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.qty-item-sub { font-size: 13px; color: #888; margin-bottom: 16px; }
+
+.quick-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.quick-btn {
+  background: #f5f5f7;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 10px 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+}
+.quick-btn.selected {
+  background: #1d1d1f;
+  color: #fff;
+  border-color: #1d1d1f;
+}
+.quick-btn:active { opacity: 0.7; }
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.input-row input {
+  flex: 1;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  background: #f5f5f7;
+  outline: none;
+}
+.input-row .unit { font-size: 14px; color: #888; white-space: nowrap; }
+
+.total-display {
+  background: #f5f5f7;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.total-label { font-size: 13px; color: #888; }
+.total-amount { font-size: 26px; font-weight: 700; color: #1d1d1f; }
+
+.action-row { display: flex; gap: 8px; }
+.action-row .btn-cancel {
+  flex: 1;
+  background: #f5f5f7;
+  border: none;
+  border-radius: 12px;
+  padding: 13px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.action-row .btn-add {
+  flex: 2;
+  background: #1d1d1f;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.record-list {
+  background: #fff;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.record-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px 6px;
+  background: #f5f5f7;
+  color: #555;
+}
+.record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-top: 0.5px solid #f0f0f0;
+}
+.record-row:first-of-type { border-top: none; }
+.record-name { font-size: 14px; }
+.record-sub { font-size: 12px; color: #888; }
+.record-right { text-align: right; }
+.record-amount { font-size: 14px; font-weight: 500; }
+.record-del {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 0 0 10px;
+  line-height: 1;
+}
+
+.nav-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(10px);
+  border-top: 0.5px solid #e0e0e0;
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: 10px;
+  gap: 3px;
+}
+.nav-tab.active { color: #1d1d1f; }
+.nav-tab .icon { font-size: 22px; }
+
+.main-wrap { padding-bottom: 80px; }
+
+.settings-row {
+  background: #fff;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.settings-row .info .name { font-size: 14px; font-weight: 500; }
+.settings-row .info .sub { font-size: 12px; color: #888; margin-top: 2px; }
+
+.form-group { margin-bottom: 12px; }
+.form-label { font-size: 13px; color: #888; margin-bottom: 5px; display: block; }
+.form-input {
+  width: 100%;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 15px;
+  background: #fff;
+  outline: none;
+}
+.form-input:focus { border-color: #1d1d1f; }
+
+.type-toggle {
+  display: flex;
+  background: #f5f5f7;
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 12px;
+}
+.type-toggle button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+  color: #888;
+}
+.type-toggle button.active {
+  background: #fff;
+  color: #1d1d1f;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.badge-drug { background: #e8f4ff; color: #0071e3; }
+.badge-proc { background: #f0fff4; color: #1a7f37; }
+.badge-unpaid { background: #fff3e0; color: #e65100; }
+.badge-paid { background: #f0fff4; color: #1a7f37; }
+
+.invoice-card {
+  background: #fff;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.invoice-farm { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.invoice-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 3px 0;
+  color: #555;
+}
+.invoice-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 600;
+  border-top: 0.5px solid #e0e0e0;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1d1d1f;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 999;
+}
+.toast.show { opacity: 1; }
+
+.loading {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  font-size: 15px;
+  color: #888;
+}
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #1d1d1f;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888;
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+.empty-state p { font-size: 14px; }
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 0.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.month-nav {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #1d1d1f;
+  padding: 0 8px;
+}
+.month-text { font-size: 16px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading" style="display:none;">
+  <div class="spinner"></div> 불러오는 중...
+</div>
+<div id="toast" class="toast"></div>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title" id="topbar-title">목장 선택</div>
+    <div class="topbar-sub" id="topbar-sub">진료를 기록할 목장을 선택하세요</div>
+  </div>
+  <div id="topbar-right"></div>
+</div>
+
+<div class="main-wrap">
+
+  <!-- 홈: 목장 선택 -->
+  <div class="screen active" id="screen-farm">
+    <div class="section-label">목장 목록</div>
+    <div class="btn-grid" id="farm-grid"></div>
+    <div id="farm-empty" class="empty-state" style="display:none;">
+      <div class="icon">🏠</div>
+      <p>등록된 목장이 없습니다<br>설정에서 목장을 추가해주세요</p>
+    </div>
+  </div>
+
+  <!-- 항목 선택 -->
+  <div class="screen" id="screen-item">
+    <div id="farm-bar-item" class="farm-bar"></div>
+    <div class="section-label">시술</div>
+    <div class="btn-grid" id="proc-grid"></div>
+    <div class="section-label">약물</div>
+    <div class="btn-grid" id="drug-grid"></div>
+    <div id="record-section"></div>
+  </div>
+
+  <!-- 수량 입력 -->
+  <div class="screen" id="screen-qty">
+    <div id="farm-bar-qty" class="farm-bar"></div>
+    <div class="qty-box">
+      <div class="qty-item-name" id="qty-item-name"></div>
+      <div class="qty-item-sub" id="qty-item-sub"></div>
+      <div id="quick-btn-wrap" class="quick-btns"></div>
+      <div class="input-row">
+        <input type="number" id="qty-input" placeholder="수량 입력" />
+        <span class="unit" id="qty-unit"></span>
+      </div>
+      <div class="total-display">
+        <span class="total-label">금액</span>
+        <span class="total-amount" id="qty-total">0원</span>
+      </div>
+      <div class="action-row">
+        <button class="btn-cancel" onclick="goBack()">취소</button>
+        <button class="btn-add" onclick="addRecord()">추가</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 청구서 -->
+  <div class="screen" id="screen-invoice">
+    <div class="month-selector">
+      <button class="month-nav" onclick="changeMonth(-1)">‹</button>
+      <span class="month-text" id="month-display"></span>
+      <button class="month-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div id="invoice-content"></div>
+  </div>
+
+  <!-- 미수금 -->
+  <div class="screen" id="screen-ar">
+    <div class="section-label">미수금 현황</div>
+    <div id="ar-content"></div>
+  </div>
+
+  <!-- 설정 -->
+  <div class="screen" id="screen-settings">
+
+    <div class="section-label">목장 관리</div>
+    <div id="farm-list-settings"></div>
+    <div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:14px; padding:14px; margin-bottom:4px;">
+      <div class="form-group">
+        <label class="form-label">목장명</label>
+        <input class="form-input" id="new-farm-name" placeholder="예: oo목장" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">대표자명</label>
+        <input class="form-input" id="new-farm-owner" placeholder="예: 홍길동" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">연락처</label>
+        <input class="form-input" id="new-farm-phone" placeholder="예: 010-0000-0000" type="tel" />
+      </div>
+      <button class="btn-primary" onclick="addFarm()">+ 목장 추가</button>
+    </div>
+
+    <div class="section-label" style="margin-top:24px;">단가표 관리</div>
+    <div id="catalog-list-settings"></div>
+    <div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:14px; padding:14px; margin-bottom:4px;">
+      <div class="type-toggle">
+        <button id="type-btn-proc" class="active" onclick="setNewType('procedure')">시술</button>
+        <button id="type-btn-drug" onclick="setNewType('drug')">약물</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">항목명</label>
+        <input class="form-input" id="new-item-name" placeholder="예: 난산수술 / 세프티오포" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="price-label">단가 (원/건)</label>
+        <input class="form-input" id="new-item-price" placeholder="예: 200000" type="number" />
+      </div>
+      <button class="btn-primary" onclick="addCatalog()">+ 항목 추가</button>
+    </div>
+
+    <div class="section-label" style="margin-top:24px;">재고 관리</div>
+    <div id="stock-list-settings"></div>
+    <div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:14px; padding:14px; margin-bottom:80px;">
+      <div class="form-group">
+        <label class="form-label">약품명</label>
+        <input class="form-input" id="new-stock-name" placeholder="예: 세프티오포" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">현재 재고 (ml)</label>
+        <input class="form-input" id="new-stock-qty" placeholder="예: 500" type="number" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">알림 기준 (ml 이하)</label>
+        <input class="form-input" id="new-stock-threshold" placeholder="예: 100" type="number" />
+      </div>
+      <button class="btn-primary" onclick="saveStock()">재고 저장</button>
+    </div>
+
+  </div>
+
+</div>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="goTab('farm')" id="tab-farm">
+    <span class="icon">🏠</span>진료입력
+  </button>
+  <button class="nav-tab" onclick="goTab('invoice')" id="tab-invoice">
+    <span class="icon">📄</span>청구서
+  </button>
+  <button class="nav-tab" onclick="goTab('ar')" id="tab-ar">
+    <span class="icon">💰</span>미수금
+  </button>
+  <button class="nav-tab" onclick="goTab('settings')" id="tab-settings">
+    <span class="icon">⚙️</span>설정
+  </button>
+</nav>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxVQobfwt17lfdnXRMEPEB1BvjUfG8BDcsNqTCu9nhFzoT3sZS3K3JQD01UwLeoYj9U-w/exec';
+
+let farms = [];
+let catalog = [];
+let records = [];
+let selectedFarm = null;
+let selectedItem = null;
+let currentQty = 0;
+let newItemType = 'procedure';
+let currentMonth = new Date().toISOString().slice(0, 7);
+
+function fmt(n) { return Math.round(n).toLocaleString('ko-KR'); }
+
+function showLoading(v) {
+  document.getElementById('loading').style.display = v ? 'flex' : 'none';
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+async function api(params) {
+  showLoading(true);
+  try {
+    if (params.action) {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(params)
+      });
+      const text = await res.text();
+      return JSON.parse(text);
+    } else {
+      const url = GAS_URL + '?type=' + params.type;
+      const res = await fetch(url);
+      const text = await res.text();
+      return JSON.parse(text);
+    }
+  } catch(e) {
+    toast('오류가 발생했습니다');
+    return null;
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadFarms() {
+  const data = await api({ type: '목장목록' });
+  if (!data || data.error) return;
+  farms = data.slice(1).map(r => ({ name: r[0], owner: r[1], phone: r[2] })).filter(f => f.name);
+  renderFarmGrid();
+  renderFarmSettings();
+}
+
+async function loadCatalog() {
+  const data = await api({ type: '단가표' });
+  if (!data || data.error) return;
+  catalog = data.slice(1).map(r => ({ name: r[0], type: r[1], price: parseFloat(r[2]) || 0, unit: r[3] })).filter(c => c.name);
+  renderItemGrids();
+  renderCatalogSettings();
+}
+
+async function loadStock() {
+  const data = await api({ type: '재고' });
+  if (!data || data.error) return;
+  const stocks = data.slice(1).map(r => ({ name: r[0], qty: r[1], threshold: r[2] })).filter(s => s.name);
+  renderStockSettings(stocks);
+}
+
+function renderFarmGrid() {
+  const grid = document.getElementById('farm-grid');
+  const empty = document.getElementById('farm-empty');
+  if (farms.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = farms.map(f => `
+    <button class="btn-card" onclick="selectFarm('${f.name}')">
+      <div class="name">🏠 ${f.name}</div>
+      <div class="sub">${f.owner || ''}${f.phone ? ' · ' + f.phone : ''}</div>
+    </button>
+  `).join('');
+}
+
+function renderItemGrids() {
+  const procs = catalog.filter(c => c.type === '시술' || c.type === 'procedure');
+  const drugs = catalog.filter(c => c.type === '약물' || c.type === 'drug');
+
+  document.getElementById('proc-grid').innerHTML = procs.map(c => `
+    <button class="btn-card" onclick="selectItem('${c.name}')">
+      <div class="name">${c.name}</div>
+      <div class="sub">${fmt(c.price)}원/건</div>
+    </button>
+  `).join('') || '<p style="font-size:13px;color:#aaa;padding:8px 4px;">항목 없음</p>';
+
+  document.getElementById('drug-grid').innerHTML = drugs.map(c => `
+    <button class="btn-card" onclick="selectItem('${c.name}')">
+      <div class="name">${c.name}</div>
+      <div class="sub">${fmt(c.price)}원/ml</div>
+    </button>
+  `).join('') || '<p style="font-size:13px;color:#aaa;padding:8px 4px;">항목 없음</p>';
+
+  renderRecordSection();
+}
+
+function renderFarmBar(containerId) {
+  const el = document.getElementById(containerId);
+  if (!selectedFarm) return;
+  el.innerHTML = `
+    <div>
+      <span class="farm-name">🏠 ${selectedFarm}</span>
+    </div>
+    <button class="change-btn" onclick="goTab('farm')">목장 변경</button>
+  `;
+}
+
+function renderRecordSection() {
+  const sec = document.getElementById('record-section');
+  if (records.length === 0) { sec.innerHTML = ''; return; }
+
+  const byFarm = {};
+  records.forEach((r, i) => {
+    if (!byFarm[r.farm]) byFarm[r.farm] = [];
+    byFarm[r.farm].push({ ...r, idx: i });
+  });
+
+  let html = '<div class="record-list">';
+  Object.keys(byFarm).forEach(farm => {
+    html += `<div class="record-group-title">${farm}</div>`;
+    byFarm[farm].forEach(r => {
+      const unit = r.itemType === '약물' || r.itemType === 'drug' ? 'ml' : '건';
+      html += `
+        <div class="record-row">
+          <div>
+            <div class="record-name">${r.name}</div>
+            <div class="record-sub">${r.qty}${unit}</div>
+          </div>
+          <div class="record-right">
+            <div class="record-amount">${fmt(r.total)}원</div>
+          </div>
+          <button class="record-del" onclick="removeRecord(${r.idx})">×</button>
+        </div>
+      `;
+    });
+  });
+  html += '</div>';
+
+  const total = records.reduce((s, r) => s + r.total, 0);
+  html += `
+    <button class="btn-primary" onclick="saveAllRecords()" style="margin-top:16px;">
+      저장하기 (총 ${fmt(total)}원)
+    </button>
+  `;
+  sec.innerHTML = html;
+}
+
+function selectFarm(name) {
+  selectedFarm = name;
+  renderFarmBar('farm-bar-item');
+  showScreen('item');
+  setTopbar(name, '시술 또는 약물을 선택하세요');
+}
+
+function selectItem(name) {
+  selectedItem = name;
+  const item = catalog.find(c => c.name === name);
+  const isDrug = item.type === '약물' || item.type === 'drug';
+
+  document.getElementById('qty-item-name').textContent = name;
+  document.getElementById('qty-item-sub').textContent = isDrug
+    ? `${fmt(item.price)}원/ml`
+    : `${fmt(item.price)}원/건`;
+  document.getElementById('qty-unit').textContent = isDrug ? 'ml' : '건';
+
+  const quickVals = isDrug ? [10, 30, 50, 100] : [1, 2, 3, 5];
+  document.getElementById('quick-btn-wrap').innerHTML = quickVals.map(v => `
+    <button class="quick-btn" onclick="setQty(${v}, this)">${v}</button>
+  `).join('');
+
+  currentQty = isDrug ? 50 : 1;
+  document.getElementById('qty-input').value = currentQty;
+  updateTotal();
+
+  renderFarmBar('farm-bar-qty');
+  showScreen('qty');
+  setTopbar(name, selectedFarm);
+}
+
+function setQty(val, btn) {
+  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  currentQty = val;
+  document.getElementById('qty-input').value = val;
+  updateTotal();
+}
+
+function updateTotal() {
+  const item = catalog.find(c => c.name === selectedItem);
+  if (!item) return;
+  const qty = parseFloat(document.getElementById('qty-input').value) || 0;
+  currentQty = qty;
+  document.getElementById('qty-total').textContent = fmt(item.price * qty) + '원';
+}
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'qty-input') updateTotal();
+});
+
+function addRecord() {
+  const item = catalog.find(c => c.name === selectedItem);
+  if (!item) return;
+  const qty = parseFloat(document.getElementById('qty-input').value) || 0;
+  if (qty <= 0) { toast('수량을 입력해주세요'); return; }
+
+  records.push({
+    farm: selectedFarm,
+    name: selectedItem,
+    itemType: item.type,
+    qty: qty,
+    price: item.price,
+    total: item.price * qty
+  });
+
+  toast(`${selectedItem} 추가됨`);
+  showScreen('item');
+  renderItemGrids();
+  setTopbar(selectedFarm, '시술 또는 약물을 선택하세요');
+}
+
+function removeRecord(idx) {
+  records.splice(idx, 1);
+  renderRecordSection();
+}
+
+async function saveAllRecords() {
+  if (records.length === 0) return;
+  const today = new Date().toLocaleDateString('ko-KR');
+
+  for (const r of records) {
+    const res = await api({
+      action: 'saveRecord',
+      date: today,
+      farm: r.farm,
+      name: r.name,
+      type: r.itemType,
+      qty: r.qty,
+      price: r.price,
+      total: r.total
+    });
+    if (!res || res.status !== 'ok') {
+      toast('저장 중 오류 발생');
+      return;
+    }
+  }
+
+  toast(`${records.length}건 저장 완료!`);
+  records = [];
+  renderRecordSection();
+  goTab('farm');
+}
+
+function goBack() {
+  showScreen('item');
+  setTopbar(selectedFarm, '시술 또는 약물을 선택하세요');
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function setTopbar(title, sub) {
+  document.getElementById('topbar-title').textContent = title;
+  document.getElementById('topbar-sub').textContent = sub;
+}
+
+function goTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  if (tab === 'farm') {
+    showScreen('farm');
+    setTopbar('목장 선택', '진료를 기록할 목장을 선택하세요');
+    loadFarms();
+  } else if (tab === 'invoice') {
+    showScreen('invoice');
+    setTopbar('청구서', currentMonth.replace('-', '년 ') + '월');
+    loadInvoice();
+  } else if (tab === 'ar') {
+    showScreen('ar');
+    setTopbar('미수금', '입금 대기 목장');
+    loadAR();
+  } else if (tab === 'settings') {
+    showScreen('settings');
+    setTopbar('설정', '목장·단가표·재고 관리');
+    loadFarms();
+    loadCatalog();
+    loadStock();
+  }
+}
+
+function changeMonth(dir) {
+  const d = new Date(currentMonth + '-01');
+  d.setMonth(d.getMonth() + dir);
+  currentMonth = d.toISOString().slice(0, 7);
+  document.getElementById('month-display').textContent = currentMonth.replace('-', '년 ') + '월';
+  setTopbar('청구서', currentMonth.replace('-', '년 ') + '월');
+  loadInvoice();
+}
+
+async function loadInvoice() {
+  document.getElementById('month-display').textContent = currentMonth.replace('-', '년 ') + '월';
+  const data = await api({ type: '기록' });
+  if (!data) return;
+
+  const rows = data.slice(1).filter(r => {
+    if (!r[0]) return false;
+    const d = new Date(r[0]);
+    return !isNaN(d) && d.toISOString().slice(0, 7) === currentMonth;
+  });
+
+  if (rows.length === 0) {
+    document.getElementById('invoice-content').innerHTML =
+      '<div class="empty-state"><div class="icon">📄</div><p>이번 달 진료 기록이 없습니다</p></div>';
+    return;
+  }
+
+  const byFarm = {};
+  rows.forEach(r => {
+    const farm = r[1];
+    if (!byFarm[farm]) byFarm[farm] = [];
+    byFarm[farm].push({ name: r[2], type: r[3], qty: r[4], total: parseFloat(r[6]) || 0 });
+  });
+
+  let html = '';
+  Object.keys(byFarm).forEach(farm => {
+    const items = byFarm[farm];
+    const total = items.reduce((s, i) => s + i.total, 0);
+    const unit = i => (i.type === '약물' || i.type === 'drug') ? 'ml' : '건';
+    html += `
+      <div class="invoice-card">
+        <div class="invoice-farm">🏠 ${farm}</div>
+        ${items.map(i => `
+          <div class="invoice-row">
+            <span>${i.name} ${i.qty}${unit(i)}</span>
+            <span>${fmt(i.total)}원</span>
+          </div>
+        `).join('')}
+        <div class="invoice-total">
+          <span>합계</span>
+          <span>${fmt(total)}원</span>
+        </div>
+        <button class="btn-secondary" onclick="copyInvoice('${farm}', ${total}, this)" style="margin-top:8px; font-size:13px; padding:9px;">
+          📋 문자 복사
+        </button>
+        <button class="btn-secondary" onclick="generateAR('${farm}', '${currentMonth}', ${total})" style="margin-top:4px; font-size:13px; padding:9px; color:#e65100;">
+          💰 미수금 등록
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById('invoice-content').innerHTML = html;
+}
+
+function copyInvoice(farm, total, btn) {
+  const card = btn.closest('.invoice-card');
+  const rows = card.querySelectorAll('.invoice-row');
+  let text = `[${currentMonth.replace('-', '년 ')}월 진료비 청구]\n`;
+  text += `${farm}\n\n`;
+  rows.forEach(r => {
+    const cells = r.querySelectorAll('span');
+    text += `${cells[0].textContent}  ${cells[1].textContent}\n`;
+  });
+  text += `\n합계: ${fmt(total)}원\n\n입금 부탁드립니다. 감사합니다.`;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => toast('문자 내용이 복사되었습니다'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('문자 내용이 복사되었습니다');
+  }
+}
+
+async function generateAR(farm, month, total) {
+  const res = await api({ action: 'markPaid', farm, month, paid: false });
+  await api({
+    action: 'generateInvoice',
+    month,
+    farm,
+    total
+  });
+  toast(`${farm} 미수금 등록됨`);
+}
+
+async function loadAR() {
+  const data = await api({ type: '미수금' });
+  if (!data) return;
+  const rows = data.slice(1).filter(r => r[0]);
+
+  if (rows.length === 0) {
+    document.getElementById('ar-content').innerHTML =
+      '<div class="empty-state"><div class="icon">✅</div><p>미수금이 없습니다</p></div>';
+    return;
+  }
+
+  const unpaid = rows.filter(r => r[3] !== '입금완료');
+  const paid = rows.filter(r => r[3] === '입금완료');
+
+  let html = '';
+  if (unpaid.length > 0) {
+    html += '<div class="section-label">미입금</div>';
+    unpaid.forEach((r, i) => {
+      const rowIdx = rows.indexOf(r);
+      html += `
+        <div class="settings-row">
+          <div class="info">
+            <div class="name">${r[0]} <span class="badge badge-unpaid">미입금</span></div>
+            <div class="sub">${r[1]} · ${fmt(r[2])}원</div>
+          </div>
+          <button class="btn-danger" onclick="markPaid('${r[0]}', '${r[1]}', this)">입금확인</button>
+        </div>
+      `;
+    });
+  }
+
+  if (paid.length > 0) {
+    html += '<div class="section-label" style="margin-top:20px;">입금완료</div>';
+    paid.forEach(r => {
+      html += `
+        <div class="settings-row">
+          <div class="info">
+            <div class="name">${r[0]} <span class="badge badge-paid">입금완료</span></div>
+            <div class="sub">${r[1]} · ${fmt(r[2])}원 · ${r[4] || ''}</div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  document.getElementById('ar-content').innerHTML = html;
+}
+
+async function markPaid(farm, month, btn) {
+  const res = await api({ action: 'markPaid', farm, month });
+  if (res && res.status === 'ok') {
+    toast(`${farm} 입금 처리 완료`);
+    loadAR();
+  }
+}
+
+function renderFarmSettings() {
+  document.getElementById('farm-list-settings').innerHTML = farms.map((f, i) => `
+    <div class="settings-row">
+      <div class="info">
+        <div class="name">${f.name}</div>
+        <div class="sub">${f.owner || ''}${f.phone ? ' · ' + f.phone : ''}</div>
+      </div>
+      <button class="btn-danger" onclick="deleteFarm('${f.name}')">삭제</button>
+    </div>
+  `).join('') || '<p style="font-size:13px;color:#aaa;padding:8px 4px;margin-bottom:8px;">등록된 목장 없음</p>';
+}
+
+function renderCatalogSettings() {
+  document.getElementById('catalog-list-settings').innerHTML = catalog.map(c => `
+    <div class="settings-row">
+      <div class="info">
+        <div class="name">${c.name} <span class="badge ${c.type === '약물' || c.type === 'drug' ? 'badge-drug' : 'badge-proc'}">${c.type === 'drug' ? '약물' : c.type === 'procedure' ? '시술' : c.type}</span></div>
+        <div class="sub">${fmt(c.price)}원/${c.unit || (c.type === '약물' || c.type === 'drug' ? 'ml' : '건')}</div>
+      </div>
+      <button class="btn-danger" onclick="deleteCatalog('${c.name}')">삭제</button>
+    </div>
+  `).join('') || '<p style="font-size:13px;color:#aaa;padding:8px 4px;margin-bottom:8px;">등록된 항목 없음</p>';
+}
+
+function renderStockSettings(stocks) {
+  document.getElementById('stock-list-settings').innerHTML = stocks.map(s => `
+    <div class="settings-row">
+      <div class="info">
+        <div class="name">${s.name}</div>
+        <div class="sub">현재 ${s.qty}ml · 기준 ${s.threshold}ml</div>
+      </div>
+    </div>
+  `).join('') || '<p style="font-size:13px;color:#aaa;padding:8px 4px;margin-bottom:8px;">등록된 재고 없음</p>';
+}
+
+async function addFarm() {
+  const name = document.getElementById('new-farm-name').value.trim();
+  const owner = document.getElementById('new-farm-owner').value.trim();
+  const phone = document.getElementById('new-farm-phone').value.trim();
+  if (!name) { toast('목장명을 입력해주세요'); return; }
+
+  const res = await api({ action: 'addFarm', name, owner, phone });
+  if (res && res.status === 'ok') {
+    toast(`${name} 추가됨`);
+    document.getElementById('new-farm-name').value = '';
+    document.getElementById('new-farm-owner').value = '';
+    document.getElementById('new-farm-phone').value = '';
+    loadFarms();
+  }
+}
+
+async function deleteFarm(name) {
+  if (!confirm(`${name}을(를) 삭제할까요?`)) return;
+  const res = await api({ action: 'deleteFarm', name });
+  if (res && res.status === 'ok') {
+    toast(`${name} 삭제됨`);
+    loadFarms();
+  }
+}
+
+function setNewType(type) {
+  newItemType = type;
+  document.getElementById('type-btn-proc').className = type === 'procedure' ? 'active' : '';
+  document.getElementById('type-btn-drug').className = type === 'drug' ? 'active' : '';
+  document.getElementById('price-label').textContent = type === 'drug' ? '단가 (원/ml)' : '단가 (원/건)';
+}
+
+async function addCatalog() {
+  const name = document.getElementById('new-item-name').value.trim();
+  const price = parseFloat(document.getElementById('new-item-price').value);
+  if (!name) { toast('항목명을 입력해주세요'); return; }
+  if (!price) { toast('단가를 입력해주세요'); return; }
+
+  const unit = newItemType === 'drug' ? 'ml' : '건';
+  const typeKo = newItemType === 'drug' ? '약물' : '시술';
+  const res = await api({ action: 'addCatalog', name, type: typeKo, price, unit });
+  if (res && res.status === 'ok') {
+    toast(`${name} 추가됨`);
+    document.getElementById('new-item-name').value = '';
+    document.getElementById('new-item-price').value = '';
+    loadCatalog();
+  }
+}
+
+async function deleteCatalog(name) {
+  if (!confirm(`${name}을(를) 삭제할까요?`)) return;
+  const res = await api({ action: 'deleteCatalog', name });
+  if (res && res.status === 'ok') {
+    toast(`${name} 삭제됨`);
+    loadCatalog();
+  }
+}
+
+async function saveStock() {
+  const name = document.getElementById('new-stock-name').value.trim();
+  const qty = document.getElementById('new-stock-qty').value;
+  const threshold = document.getElementById('new-stock-threshold').value;
+  if (!name) { toast('약품명을 입력해주세요'); return; }
+
+  const res = await api({ action: 'saveStock', name, qty, threshold });
+  if (res && res.status === 'ok') {
+    toast(`${name} 재고 저장됨`);
+    document.getElementById('new-stock-name').value = '';
+    document.getElementById('new-stock-qty').value = '';
+    document.getElementById('new-stock-threshold').value = '';
+    loadStock();
+  }
+}
+
+// 초기 로드
+loadFarms();
+loadCatalog();
+</script>
+</body>
+</html>
